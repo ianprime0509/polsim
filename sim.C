@@ -1,8 +1,5 @@
 // TODO:
-// Use phi parameter to model irradiation (as well as C, to a lesser extent)
-// Update temperature model appropriately:
-// 100 nA ~ -4% max polarization; 50 nA ~ -2% max polarization
-// 100 nA = 6.242e11 electrons/second
+// Implement annealing
 
 #include "TROOT.h"
 #include "TCanvas.h"

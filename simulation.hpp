@@ -9,6 +9,20 @@
 #include <memory>
 #include <string>
 
+/* The following class represents a single solid polarized target experiment
+ * in its entirety (i.e. it takes into account all relevant parameters).
+ * The simulation stores data internally, which can be written to a ROOT
+ * file or graphed to a TCanvas using the draw method.
+ *
+ * Some notes on the physics involved:
+ * BEAM: the beam is activated by using the beam_on method, which takes
+ * as its argument a beam current in nA. The beam will both heat
+ * the material and change its paramagnetic structure; currently,
+ * the latter effect is modeled by increasing the "extraneous relaxation rate"
+ * phi according to a certain exponential growth (in reality, it should change
+ * the parameter C, but the underlying physical model does not produce the correct
+ * results under this change).
+ */
 class Simulation {
     // Physical parameters
     static constexpr Double_t ELEM_CHARGE = 1.602176662e-19; // in C
