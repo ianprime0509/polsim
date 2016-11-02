@@ -10,6 +10,8 @@
 #include <string>
 
 class Simulation {
+    // Physical parameters
+    static constexpr Double_t ELEM_CHARGE = 1.602176662e-19; // in C
     // Parameters for alpha/beta vs frequency fit
     static constexpr Double_t FIT_A = 0.545266;
     static constexpr Double_t FIT_S = 0.088415;
@@ -18,7 +20,7 @@ class Simulation {
     // Simulation parameters
     static constexpr Double_t TIME_STEP = 1;
     static constexpr int N_ITER = 1000;
-    static constexpr Double_t RANDOMNESS = 0.03;
+    static constexpr Double_t RANDOMNESS = 0.02;
 
     // Name of the current simulation (for data storage and graphing)
     std::string name;
@@ -28,16 +30,13 @@ class Simulation {
     // "External" physical parameters
     Double_t t, freq, temperature;
     // Internal physical parameters
-    Double_t alpha, beta, c, pe0;
+    Double_t alpha, beta, c, pe0, phi;
     // Polarization values
     // pn_raw is the "raw polarization" (without noise)
     Double_t pn_raw, pn, pe;
     // Dose
-    Double_t dose;
+    Double_t dose, beam_current;
 
-    // Internal state variables
-    bool is_beam;
-    
     // TTree (for storing data)
     std::unique_ptr<TTree> tree;
     // TGraph (for plotting the data)
@@ -53,8 +52,8 @@ public:
 
     void set_freq(Double_t freq);
     void set_temperature(Double_t temperature);
-    // Turns the beam on
-    void beam_on();
+    // Turns the beam on (current measured in nA)
+    void beam_on(Double_t current=100.0);
     // Turns the beam off
     void beam_off();
     // Runs the simulation and stops when t >= t_final

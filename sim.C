@@ -1,3 +1,9 @@
+// TODO:
+// Use phi parameter to model irradiation (as well as C, to a lesser extent)
+// Update temperature model appropriately:
+// 100 nA ~ -4% max polarization; 50 nA ~ -2% max polarization
+// 100 nA = 6.242e11 electrons/second
+
 #include "TROOT.h"
 #include "TCanvas.h"
 #include "TFile.h"
@@ -31,6 +37,10 @@ int sim() {
         return 1;
     }
 
+    auto sim0 = new Simulation("sim0", 140.15);
+    sim0->run_until(5000);
+    sim0->write_data();
+    
     auto sim = new Simulation("sim1", 140.15);
     sim->run_until(1000);
     sim->beam_on();
@@ -50,12 +60,30 @@ int sim() {
     auto sim3 = new Simulation("sim3", 140.15);
     sim3->beam_on();
     sim3->run_until(5000);
+    sim3->beam_off();
     sim3->write_data();
 
+    auto sim4 = new Simulation("sim4", 140.15);
+    sim4->run_until(1000);
+    sim4->beam_on();
+    sim4->run_until(1200);
+    sim4->beam_off();
+    sim4->run_until(5000);
+    sim4->write_data();
+
+    auto sim5 = new Simulation("sim5", 140.15);
+    sim5->beam_on();
+    sim5->run_until(3000);
+    sim5->beam_off();
+    sim5->run_until(5000);
+
     auto canvas = new TCanvas("c1", "Polarization vs time");
-    sim->draw();
+    sim0->draw("AC", kOrange);
+    sim->draw("C same");
     sim2->draw("C same", kRed);
     sim3->draw("C same", kBlue);
+    sim4->draw("C same", kGreen);
+    sim5->draw("C same", kViolet);
 
     return 0;
 }
