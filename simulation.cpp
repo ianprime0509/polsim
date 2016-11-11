@@ -8,7 +8,7 @@ using namespace std;
 Simulation::Simulation(string name, Double_t freq, Double_t pn, Double_t pe,
                        Double_t c, Double_t temperature,
                        Double_t t1n, Double_t t1e)
-    : name(name), t1n(t1n), t1e(t1e), c(c), phi(0.0), pn_raw(pn), pn(pn), pe(pe), dose(0.0) {
+    : name(name), t1n(t1n), t1e(t1e), c(c), phi(0.0), pn_raw(pn), pn(pn), pe(pe), dose(0.0), in_anneal(false) {
     set_freq(freq);
     set_temperature(temperature);
     beam_off();
@@ -26,16 +26,9 @@ Simulation::Simulation(string name, Double_t freq, Double_t pn, Double_t pe,
 }
 
 void Simulation::set_freq(Double_t f) {
-    // Make sure to calculate alpha and beta parameters
-    const Double_t scale = FIT_A / (TMath::Sqrt(2 * TMath::Pi()) * FIT_S);
-    const Double_t diff1 = f - FIT_M1;
-    const Double_t diff2 = f - FIT_M2;
-    const Double_t exp1 = TMath::Exp(-diff1 * diff1 / (2 * FIT_S * FIT_S));
-    const Double_t exp2 = TMath::Exp(-diff2 * diff2 / (2 * FIT_S * FIT_S));
-
     freq = f;
-    alpha = scale * exp2;
-    beta = scale * exp1;
+    // Make sure to calculate alpha and beta parameters
+    calc_transition_rates();
 }
 
 void Simulation::set_temperature(Double_t temp) {
@@ -56,6 +49,20 @@ void Simulation::run_until(Double_t t_final) {
         time_step();
         tree->Fill();
     }
+}
+
+void Simulation::anneal(Double_t time, Double_t temp) {
+    // Reset phi (i.e. remove negative effects of irradiation)
+    phi = 0.0;
+    // Maybe change t1n?
+    t1n *= 0.8;
+
+    in_anneal = true;
+    auto temp_tmp = temperature;
+    set_temperature(temp);
+    run_until(t + time);
+    set_temperature(temp_tmp);
+    in_anneal = false;
 }
 
 void Simulation::write_data() {
@@ -88,10 +95,13 @@ void Simulation::time_step() {
     // Parameters for temperature change (exponential growth/decay)
     // TEMP_SS = steady-state temperature
     // K_TEMP = rate of exponential increase
-    const auto K_TEMP = 1.0;
+    // If we're annealing, we shouldn't allow the temperature to change
+    // (assume anneals occur at constant temperature)
+    const auto K_TEMP = in_anneal ? 0.0 : 0.01;
     const auto TEMP_SS = 1.0 + beam_current / 100.0;
 
     // Increase phi according to some exponential growth when the beam is on
+    // Parameters are similar to those for temperature change
     const auto K_PHI = beam_current / 1e7;
     const auto PHI_SS = 0.001;
 
@@ -112,16 +122,34 @@ void Simulation::time_step() {
         // Update temperature and phi
         set_temperature(temperature + (TIME_STEP / N_ITER) * K_TEMP * (TEMP_SS - temperature));
         phi += (TIME_STEP / N_ITER) * K_PHI * (PHI_SS - phi);
+
+        // Update C and dose
+        c += IRRADIATION_FACTOR * beam_current * (TIME_STEP / N_ITER);
+        // Must convert beam_current (in nA) to electrons/second
+        dose += (beam_current * 1e-9 / ELEM_CHARGE) * TIME_STEP / N_ITER;
+        // Calculate new transition rates (alpha and beta)
+        calc_transition_rates();
+
+        // Update time
+        t += TIME_STEP / N_ITER;
     }
 
     // Update "noisy pn"
     pn = pn_noisy();
+}
 
-    // Add dose
-    // Must convert beam_current (in nA) to electrons/second
-    dose += (beam_current * 1e-9 / ELEM_CHARGE) * TIME_STEP;
+void Simulation::calc_transition_rates() {
+    // Calculate distribution parameters (the means m1 and m2 are particularly important)
+    const auto FIT_M1 = (FIT_M1_BASE - FIT_M1_COEFF) + FIT_M1_COEFF * TMath::Exp(FIT_M1_RATE * dose);
+    const auto FIT_M2 = (FIT_M2_BASE - FIT_M2_COEFF) + FIT_M2_COEFF * TMath::Exp(FIT_M2_RATE * dose);
+    const auto scale = FIT_A / (TMath::Sqrt(2 * TMath::Pi()) * FIT_S);
+    const auto diff1 = freq - FIT_M1;
+    const auto diff2 = freq - FIT_M2;
+    const auto exp1 = TMath::Exp(-diff1 * diff1 / (2 * FIT_S * FIT_S));
+    const auto exp2 = TMath::Exp(-diff2 * diff2 / (2 * FIT_S * FIT_S));
 
-    t += TIME_STEP;
+    alpha = scale * exp2;
+    beta = scale * exp1;
 }
 
 Double_t Simulation::pn_noisy() {

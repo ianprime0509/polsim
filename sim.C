@@ -1,5 +1,6 @@
 // TODO:
-// Implement annealing
+// Temperature change is a little arbitrary; what is the actual thermal behavior?
+// (e.g. find a good value for K_TEMP)
 
 #include "TROOT.h"
 #include "TCanvas.h"
@@ -34,53 +35,30 @@ int sim() {
         return 1;
     }
 
-    auto sim0 = new Simulation("sim0", 140.15);
-    sim0->run_until(5000);
-    sim0->write_data();
-    
-    auto sim = new Simulation("sim1", 140.15);
-    sim->run_until(1000);
-    sim->beam_on();
-    sim->run_until(1200);
-    sim->beam_off();
-    sim->run_until(1250);
-    sim->beam_on();
-    sim->run_until(5000);
-    sim->write_data();
+    auto sim1 = new Simulation("sim1", 140.2);
+    sim1->run_until(10000);
+    sim1->beam_on();
+    sim1->run_until(12000);
+    sim1->beam_off();
+    sim1->run_until(12100);
+    sim1->beam_on();
+    sim1->run_until(15000);
+    sim1->beam_off();
+    sim1->run_until(17000);
+    sim1->anneal(500);
+    sim1->run_until(25000);
+    sim1->beam_on();
+    sim1->run_until(30000);
 
-    auto sim2 = new Simulation("sim2", 140.15);
-    sim2->run_until(1000);
-    sim2->beam_on();
-    sim2->run_until(5000);
+    auto sim2 = new Simulation("sim2", 140.2);
+    sim2->set_temperature(70.0);
+    sim2->run_until(30000);
     sim2->write_data();
 
-    auto sim3 = new Simulation("sim3", 140.15);
-    sim3->beam_on();
-    sim3->run_until(5000);
-    sim3->beam_off();
-    sim3->write_data();
-
-    auto sim4 = new Simulation("sim4", 140.15);
-    sim4->run_until(1000);
-    sim4->beam_on();
-    sim4->run_until(1200);
-    sim4->beam_off();
-    sim4->run_until(5000);
-    sim4->write_data();
-
-    auto sim5 = new Simulation("sim5", 140.15);
-    sim5->beam_on();
-    sim5->run_until(3000);
-    sim5->beam_off();
-    sim5->run_until(5000);
-
     auto canvas = new TCanvas("c1", "Polarization vs time");
-    sim0->draw("AC", kOrange);
-    sim->draw("C same");
+
+    sim1->draw();
     sim2->draw("C same", kRed);
-    sim3->draw("C same", kBlue);
-    sim4->draw("C same", kGreen);
-    sim5->draw("C same", kViolet);
 
     return 0;
 }
