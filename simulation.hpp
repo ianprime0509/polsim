@@ -68,7 +68,9 @@ class Simulation {
     // Physical constants
     Double_t t1n, t1e;
     // "External" physical parameters
-    Double_t t, freq, temperature;
+    // The system_temperature is the temperature of the system;
+    // in normal situations, this is 1K (the temperature of the fridge)
+    Double_t t, freq, temperature, system_temperature;
     // Internal physical parameters
     Double_t alpha, beta, c, pe0, phi;
     // Polarization values
@@ -76,8 +78,6 @@ class Simulation {
     Double_t pn_raw, pn, pe;
     // Dose
     Double_t dose, beam_current;
-    // Internal state variables
-    bool in_anneal;
 
     // TTree (for storing data)
     std::unique_ptr<TTree> tree;
@@ -93,7 +93,9 @@ public:
                Double_t t1n = 25*60.0, Double_t t1e = 0.03);
 
     void set_freq(Double_t freq);
-    void set_temperature(Double_t temperature);
+    // Sets the temperature of the system (can't set actual target
+    // temperature directly, as expected physically)
+    void set_system_temperature(Double_t temp);
     // Turns the beam on (current measured in nA)
     void beam_on(Double_t current=100.0);
     // Turns the beam off
@@ -112,6 +114,7 @@ public:
     void draw(const char *options="AC", const Color_t color=kBlack);
 
 private:
+    void set_temperature(Double_t temp);
     void time_step();
     // Calculates the alpha and beta parameters
     void calc_transition_rates();

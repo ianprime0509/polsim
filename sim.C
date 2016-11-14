@@ -51,14 +51,14 @@ int sim() {
     sim1->run_until(30000);
 
     auto sim2 = new Simulation("sim2", 140.2);
-    sim2->set_temperature(70.0);
+    sim2->set_system_temperature(70.0);
     sim2->run_until(30000);
     sim2->write_data();
 
-    auto canvas = new TCanvas("c1", "Polarization vs time");
+    new TCanvas("c1", "Polarization vs time");
 
     sim1->draw();
-    sim2->draw("C same", kRed);
+    //sim2->draw("C same", kRed);
 
     return 0;
 }

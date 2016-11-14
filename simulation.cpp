@@ -8,9 +8,10 @@ using namespace std;
 Simulation::Simulation(string name, Double_t freq, Double_t pn, Double_t pe,
                        Double_t c, Double_t temperature,
                        Double_t t1n, Double_t t1e)
-    : name(name), t1n(t1n), t1e(t1e), c(c), phi(0.0), pn_raw(pn), pn(pn), pe(pe), dose(0.0), in_anneal(false) {
+    : name(name), t1n(t1n), t1e(t1e), c(c), phi(0.0), pn_raw(pn), pn(pn), pe(pe), dose(0.0) {
     set_freq(freq);
     set_temperature(temperature);
+    system_temperature = temperature;
     beam_off();
     // Set up internal TTree
     tree = unique_ptr<TTree>(new TTree(name.c_str(), "Polarization Data"));
@@ -31,9 +32,8 @@ void Simulation::set_freq(Double_t f) {
     calc_transition_rates();
 }
 
-void Simulation::set_temperature(Double_t temp) {
-    pe0 = -TMath::TanH(2 / temp);
-    temperature = temp;
+void Simulation::set_system_temperature(Double_t temp) {
+    system_temperature = temp;
 }
 
 void Simulation::beam_on(Double_t current) {
@@ -57,12 +57,10 @@ void Simulation::anneal(Double_t time, Double_t temp) {
     // Maybe change t1n?
     t1n *= 0.8;
 
-    in_anneal = true;
-    auto temp_tmp = temperature;
-    set_temperature(temp);
+    auto temp_tmp = system_temperature;
+    set_system_temperature(temp);
     run_until(t + time);
-    set_temperature(temp_tmp);
-    in_anneal = false;
+    set_system_temperature(temp_tmp);
 }
 
 void Simulation::write_data() {
@@ -91,14 +89,19 @@ void Simulation::draw(const char *options, const Color_t color) {
     graph->Draw(options);
 }
 
+void Simulation::set_temperature(Double_t temp) {
+    pe0 = -TMath::TanH(2 / temp);
+    temperature = temp;
+}
+
 void Simulation::time_step() {
     // Parameters for temperature change (exponential growth/decay)
     // TEMP_SS = steady-state temperature
     // K_TEMP = rate of exponential increase
     // If we're annealing, we shouldn't allow the temperature to change
     // (assume anneals occur at constant temperature)
-    const auto K_TEMP = in_anneal ? 0.0 : 0.01;
-    const auto TEMP_SS = 1.0 + beam_current / 100.0;
+    const auto K_TEMP = 0.01;
+    const auto TEMP_SS = system_temperature + beam_current / 100.0;
 
     // Increase phi according to some exponential growth when the beam is on
     // Parameters are similar to those for temperature change
