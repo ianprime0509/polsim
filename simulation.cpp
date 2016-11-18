@@ -156,6 +156,8 @@ void Simulation::calc_transition_rates() {
 }
 
 Double_t Simulation::pn_noisy() {
-    const Double_t noise = RANDOMNESS * (0.5 - rng->Rndm());
-    return pn_raw * (1 + noise);
+    // Account for both types of noise
+    const Double_t thermal_noise = THERMAL_RANDOMNESS * (0.5 - rng->Rndm());
+    const Double_t uniform_noise = BASE_RANDOMNESS * (0.5 - rng->Rndm());
+    return pn_raw * (1 + thermal_noise) + uniform_noise;
 }

@@ -56,7 +56,13 @@ class Simulation {
     // Simulation parameters
     static constexpr Double_t TIME_STEP = 1;
     static constexpr int N_ITER = 1000;
-    static constexpr Double_t RANDOMNESS = 0.02;
+    // Randomness parameters:
+    // There are fluctuations caused by thermal effects which will manifest as
+    // a fraction of the polarization value, but there are also fluctuations
+    // which will manifest uniformly at any polarization (even at 0);
+    // these are probably measurement uncertainties
+    static constexpr Double_t THERMAL_RANDOMNESS = 0.02;
+    static constexpr Double_t BASE_RANDOMNESS = 0.002;
     // Not sure what kind of a parameter this is
     // Whenever the beam is on, C is increased according to
     // (delta)C = IRRADIATION_FACTOR * beam_current * (delta)t
